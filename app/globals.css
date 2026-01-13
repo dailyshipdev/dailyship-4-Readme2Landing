@@ -179,6 +179,15 @@
   .prose td {
     @apply px-4 py-2 border-b border-border/50;
   }
+  .prose img {
+    @apply rounded-lg shadow-md my-4;
+  }
+  .prose hr {
+    @apply border-t border-border/50 my-8;
+  }
+  .prose h1, .prose h2, .prose h3 {
+    @apply scroll-mt-20;
+  }
 }
 
 /* Smooth scroll */

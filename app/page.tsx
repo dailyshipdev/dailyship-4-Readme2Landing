@@ -12,167 +12,41 @@ import { remark } from 'remark';
 import remarkGfm from 'remark-gfm';
 import remarkHtml from 'remark-html';
 
-const EXAMPLE_READMES: Record<string, string> = {
-  'Select example...': '',
-  'Shadcn UI': `# shadcn/ui
-
-Re-usable components built with Radix UI and Tailwind CSS.
-
-## Description
-
-Beautifully designed components that you can copy and paste into your apps. Accessible. Customizable. Open Source.
-
-## Features
-
-- **Copy and paste** components into your apps
-- **Accessible** components built with Radix UI
-- **Customizable** with Tailwind CSS
-- **Open source** and free to use
-
-## Installation
-
-\`\`\`bash
-npx shadcn@latest init
-\`\`\`
-
-## Usage
-
-\`\`\`bash
-npx shadcn@latest add button
-\`\`\`
-
-## License
-
-MIT`,
-
-  'Tauri': `# Tauri
-
-Build smaller, faster, and more secure desktop applications with a web frontend.
-
-## About
-
-Tauri is a framework for building desktop applications with any frontend framework and a Rust core.
-
-## Features
-
-- **Smaller** bundle sizes
-- **Faster** performance
-- **More secure** by default
-- **Cross-platform** support
-
-## Getting Started
-
-\`\`\`bash
-npm create tauri-app@latest
-\`\`\`
-
-## Documentation
-
-Visit [tauri.app](https://tauri.app) for full documentation.
-
-## License
-
-MIT or Apache-2.0`,
-
-  'FastAPI': `# FastAPI
-
-Modern, fast (high-performance), web framework for building APIs with Python 3.8+ based on standard Python type hints.
-
-## Description
-
-FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.8+ based on standard Python type hints.
-
-## Key Features
-
-- **Fast**: Very high performance, on par with NodeJS and Go
-- **Fast to code**: Increase the speed to develop features by about 200% to 300%
-- **Fewer bugs**: Reduce about 40% of human (developer) induced errors
-- **Intuitive**: Great editor support. Completion everywhere. Less time debugging
-- **Easy**: Designed to be easy to use and learn. Less time reading docs
-- **Short**: Minimize code duplication. Multiple features from each parameter declaration
-
-## Installation
-
-\`\`\`bash
-pip install fastapi
-\`\`\`
-
-## Quickstart
-
-\`\`\`python
-from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
-\`\`\`
-
-## License
-
-MIT`,
-
-  'LangChain': `# LangChain
-
-⚡ Building applications with LLMs through composability ⚡
-
-## Overview
-
-LangChain is a framework for developing applications powered by language models.
-
-## Features
-
-- **Composable** building blocks for LLM applications
-- **Production-ready** chains and agents
-- **Extensible** framework for custom use cases
-- **Open source** and community-driven
-
-## Installation
-
-\`\`\`bash
-pip install langchain
-\`\`\`
-
-## Quick Start
-
-\`\`\`python
-from langchain.llms import OpenAI
-
-llm = OpenAI(temperature=0.9)
-text = "What would be a good company name for a company that makes colorful socks?"
-print(llm(text))
-\`\`\`
-
-## Documentation
-
-Full documentation available at [python.langchain.com](https://python.langchain.com)
-
-## License
-
-MIT`,
-};
-
 export default function Home() {
   const [markdown, setMarkdown] = useState('');
   const [pageModel, setPageModel] = useState<PageModel | null>(null);
   const [copied, setCopied] = useState(false);
-  const [selectedExample, setSelectedExample] = useState('Select example...');
 
   useEffect(() => {
+    let cancelled = false;
+    
     if (markdown.trim()) {
-      parseReadme(markdown).then(setPageModel).catch(console.error);
+      parseReadme(markdown)
+        .then((model) => {
+          if (!cancelled) {
+            setPageModel(model);
+          }
+        })
+        .catch(console.error);
     } else {
-      setPageModel(null);
+      // Use setTimeout to avoid synchronous setState
+      const timer = setTimeout(() => {
+        if (!cancelled) {
+          setPageModel(null);
+        }
+      }, 0);
+      
+      return () => {
+        clearTimeout(timer);
+        cancelled = true;
+      };
     }
+    
+    return () => {
+      cancelled = true;
+    };
   }, [markdown]);
 
-  const handleExampleChange = (example: string) => {
-    setSelectedExample(example);
-    if (example !== 'Select example...' && EXAMPLE_READMES[example]) {
-      setMarkdown(EXAMPLE_READMES[example]);
-    }
-  };
 
   const downloadHTML = async () => {
     if (!pageModel) return;
@@ -215,24 +89,6 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <select
-                value={selectedExample}
-                onChange={(e) => handleExampleChange(e.target.value)}
-                className="appearance-none px-4 py-2 pr-8 border rounded-lg bg-background hover:bg-muted/50 transition-colors text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 bg-gradient-to-r from-background to-muted/30"
-              >
-                {Object.keys(EXAMPLE_READMES).map((key) => (
-                  <option key={key} value={key}>
-                    {key}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
             {pageModel && (
               <>
                 <Button 
@@ -282,7 +138,7 @@ export default function Home() {
               <Textarea
                 value={markdown}
                 onChange={(e) => setMarkdown(e.target.value)}
-                placeholder="Paste your README markdown here...&#10;&#10;Or select an example from the dropdown above 👆"
+                placeholder="Paste your README markdown here...&#10;&#10;The landing page will be generated automatically ✨"
                 className="min-h-full resize-none font-mono text-sm bg-background border-2 focus:border-primary/50 transition-colors"
               />
             </div>
@@ -314,7 +170,7 @@ export default function Home() {
                   </div>
                   <p className="text-xl font-semibold mb-2 text-foreground">Ready to transform your README</p>
                   <p className="text-sm text-center max-w-sm leading-relaxed">
-                    Paste your README markdown in the left panel or select an example from the dropdown to see the magic happen ✨
+                    Paste your README markdown in the left panel to see your landing page come to life ✨
                   </p>
                   <div className="mt-6 flex gap-2 text-xs">
                     <span className="px-3 py-1 bg-muted rounded-full">⚡ Instant Preview</span>
@@ -335,13 +191,51 @@ async function generateHTML(model: PageModel): Promise<string> {
   
   const featuresHTML = model.features
     .map(
-      (f) => `
+      (f, idx) => `
     <div class="feature-card">
+      ${f.icon ? `<div class="feature-icon">${f.icon}</div>` : `<div class="feature-number">${idx + 1}</div>`}
       <h3>${escapeHtml(f.title)}</h3>
       ${f.desc ? `<p>${escapeHtml(f.desc)}</p>` : ''}
     </div>`
     )
     .join('');
+
+  const statsHTML = model.stats
+    ? model.stats
+        .map(
+          (stat) => `
+    <div class="stat-item">
+      <div class="stat-value">${escapeHtml(stat.value)}</div>
+      <div class="stat-label">${escapeHtml(stat.label)}</div>
+    </div>`
+        )
+        .join('')
+    : '';
+
+  const techStackHTML = model.techStack
+    ? model.techStack
+        .map((tech) => `<span class="tech-badge">${escapeHtml(tech)}</span>`)
+        .join('')
+    : '';
+
+  const testimonialsHTML = model.testimonials
+    ? model.testimonials
+        .map(
+          (t) => `
+    <div class="testimonial-card">
+      <div class="testimonial-quote">"</div>
+      <p class="testimonial-text">${escapeHtml(t.quote)}</p>
+      ${t.author ? `<p class="testimonial-author">— ${escapeHtml(t.author)}</p>` : ''}
+    </div>`
+        )
+        .join('')
+    : '';
+
+  const heroImageHTML = model.heroImage
+    ? `<div class="hero-image-wrapper">
+        <img src="${escapeHtml(model.heroImage.url)}" alt="${escapeHtml(model.heroImage.alt)}" class="hero-image" />
+      </div>`
+    : '';
 
   const sectionsHTMLPromises = model.sections.map(async (s) => {
     const html = await processor.process(s.content);
@@ -374,26 +268,45 @@ async function generateHTML(model: PageModel): Promise<string> {
     }
     .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
     .hero {
-      text-align: center;
       padding: 80px 20px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
+    .hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+    .hero-text { text-align: left; }
     .hero h1 { font-size: 3.5rem; margin-bottom: 1rem; font-weight: 700; }
-    .hero p { font-size: 1.25rem; margin-bottom: 2rem; opacity: 0.9; max-width: 600px; margin-left: auto; margin-right: auto; }
-    .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem; }
+    .hero p { font-size: 1.25rem; margin-bottom: 2rem; opacity: 0.9; }
+    .hero-image-wrapper { text-align: center; }
+    .hero-image { max-width: 100%; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; }
     .badge { padding: 4px 12px; background: rgba(255,255,255,0.2); border-radius: 12px; font-size: 0.875rem; }
-    .cta-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .cta-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
     .btn { padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500; display: inline-block; transition: all 0.2s; }
     .btn-primary { background: white; color: #667eea; }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .btn-secondary { background: transparent; border: 2px solid white; color: white; }
     .btn-secondary:hover { background: white; color: #667eea; }
+    .stats { padding: 60px 20px; background: #f8f9fa; border-top: 1px solid #e0e0e0; border-bottom: 1px solid #e0e0e0; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; text-align: center; }
+    .stat-value { font-size: 2.5rem; font-weight: 700; color: #667eea; margin-bottom: 8px; }
+    .stat-label { font-size: 0.875rem; color: #666; text-transform: capitalize; }
     .features { padding: 80px 20px; background: #f8f9fa; }
     .features h2 { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; }
     .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
     .feature-card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .feature-icon, .feature-number { font-size: 2rem; margin-bottom: 12px; }
     .feature-card h3 { font-size: 1.25rem; margin-bottom: 8px; color: #667eea; }
+    .tech-stack { padding: 60px 20px; text-align: center; }
+    .tech-stack h2 { font-size: 2rem; margin-bottom: 2rem; }
+    .tech-badges { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .tech-badge { padding: 8px 16px; background: #f0f0f0; border-radius: 6px; font-size: 0.875rem; }
+    .testimonials { padding: 80px 20px; background: #f8f9fa; }
+    .testimonials h2 { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; }
+    .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+    .testimonial-card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .testimonial-quote { font-size: 3rem; color: #667eea; opacity: 0.3; margin-bottom: 12px; }
+    .testimonial-text { font-style: italic; margin-bottom: 16px; }
+    .testimonial-author { font-weight: 600; color: #667eea; }
     .content-section { padding: 60px 20px; }
     .content-section h2 { font-size: 2rem; margin-bottom: 1.5rem; }
     .section-content { max-width: 800px; margin: 0 auto; }
@@ -401,39 +314,42 @@ async function generateHTML(model: PageModel): Promise<string> {
     .section-content code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-family: 'Courier New', monospace; }
     .section-content pre { background: #f4f4f4; padding: 16px; border-radius: 6px; overflow-x: auto; margin: 1rem 0; }
     .section-content ul, .section-content ol { margin-left: 24px; margin-bottom: 1rem; }
-    footer { text-align: center; padding: 40px 20px; border-top: 1px solid #e0e0e0; color: #666; }
+    footer { text-align: center; padding: 40px 20px; border-top: 1px solid #e0e0e0; color: #666; background: #f8f9fa; }
     @media (max-width: 768px) {
+      .hero-content { grid-template-columns: 1fr; text-align: center; }
+      .hero-text { text-align: center; }
       .hero h1 { font-size: 2.5rem; }
-      .features-grid { grid-template-columns: 1fr; }
+      .features-grid, .testimonials-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
   <section class="hero">
     <div class="container">
-      <h1>${escapeHtml(model.title)}</h1>
-      <p>${escapeHtml(model.tagline)}</p>
-      ${badgesHTML ? `<div class="badges">${badgesHTML}</div>` : ''}
-      <div class="cta-buttons">
-        <a href="${escapeHtml(model.cta.href)}" class="btn btn-primary">${escapeHtml(model.cta.label)}</a>
-        ${model.secondaryLinks.map(l => `<a href="${escapeHtml(l.href)}" class="btn btn-secondary">${escapeHtml(l.label)}</a>`).join('')}
+      <div class="hero-content">
+        <div class="hero-text">
+          <h1>${escapeHtml(model.title)}</h1>
+          <p>${escapeHtml(model.tagline)}</p>
+          ${badgesHTML ? `<div class="badges">${badgesHTML}</div>` : ''}
+          <div class="cta-buttons">
+            <a href="${escapeHtml(model.cta.href)}" class="btn btn-primary">${escapeHtml(model.cta.label)}</a>
+            ${model.secondaryLinks.map(l => `<a href="${escapeHtml(l.href)}" class="btn btn-secondary">${escapeHtml(l.label)}</a>`).join('')}
+          </div>
+        </div>
+        ${heroImageHTML}
       </div>
     </div>
   </section>
-  ${model.features.length > 0 ? `
-  <section class="features">
-    <div class="container">
-      <h2>Features</h2>
-      <div class="features-grid">
-        ${featuresHTML}
-      </div>
-    </div>
-  </section>
-  ` : ''}
+  ${statsHTML ? `<section class="stats"><div class="container"><div class="stats-grid">${statsHTML}</div></div></section>` : ''}
+  ${model.features.length > 0 ? `<section class="features"><div class="container"><h2>Features</h2><div class="features-grid">${featuresHTML}</div></div></section>` : ''}
+  ${techStackHTML ? `<section class="tech-stack"><div class="container"><h2>Built With</h2><div class="tech-badges">${techStackHTML}</div></div></section>` : ''}
+  ${testimonialsHTML ? `<section class="testimonials"><div class="container"><h2>What People Say</h2><div class="testimonials-grid">${testimonialsHTML}</div></div></section>` : ''}
   ${sectionsHTML}
   <footer>
     <div class="container">
       <p>${escapeHtml(model.title)} - ${escapeHtml(model.tagline)}</p>
+      <p style="margin-top: 8px; font-size: 0.75rem;">Generated with README → Landing</p>
     </div>
   </footer>
 </body>
