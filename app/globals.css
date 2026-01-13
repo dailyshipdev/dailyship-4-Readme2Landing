@@ -180,13 +180,62 @@
     @apply px-4 py-2 border-b border-border/50;
   }
   .prose img {
-    @apply rounded-lg shadow-md my-4;
+    @apply rounded-xl shadow-lg my-6 border border-border/30;
   }
   .prose hr {
     @apply border-t border-border/50 my-8;
   }
   .prose h1, .prose h2, .prose h3 {
     @apply scroll-mt-20;
+  }
+  .prose h3 {
+    @apply text-2xl font-bold mt-8 mb-4;
+  }
+  .prose h4 {
+    @apply text-xl font-semibold mt-6 mb-3;
+  }
+  .prose ul li::marker {
+    @apply text-primary;
+  }
+  .prose ol li::marker {
+    @apply text-primary font-bold;
+  }
+  
+  /* How it works steps styling */
+  .how-it-works-steps ul li {
+    @apply relative pl-16 mb-8;
+  }
+  
+  .how-it-works-steps ul li::before {
+    content: counter(step-counter);
+    counter-increment: step-counter;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3rem;
+    height: 3rem;
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+    color: hsl(var(--primary-foreground));
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.125rem;
+    box-shadow: 0 4px 16px hsl(var(--primary) / 0.3);
+  }
+  
+  .how-it-works-steps ul {
+    counter-reset: step-counter;
+    @apply space-y-6;
+  }
+  
+  .how-it-works-steps ul li p {
+    @apply text-lg font-medium text-foreground mb-2;
+  }
+  
+  .how-it-works-steps ul li p:first-child {
+    @apply text-xl font-bold;
   }
 }
 

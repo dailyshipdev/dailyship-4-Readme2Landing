@@ -80,17 +80,33 @@ export function LandingPage({ model }: LandingPageProps) {
                   {model.tagline}
                 </p>
                 
-                {/* Badges */}
-                {model.badges && model.badges.length > 0 && (
+                {/* Badges - Only show meaningful ones */}
+                {model.badges && model.badges.length > 0 && model.badges.filter(b => {
+                  const label = b.label.toLowerCase();
+                  // Filter out generic words that aren't really badges
+                  return !['pick', 'bs', 'this', 'the', 'and', 'or'].includes(label) && 
+                         label.length > 2 && 
+                         (label.includes('license') || label.includes('mit') || label.includes('apache') || 
+                          label.length > 4 || /^[A-Z]/.test(b.label));
+                }).length > 0 && (
                   <div className="flex flex-wrap justify-center lg:justify-start gap-3 mb-10 animate-fade-in-up" style={{ animationDelay: '0.15s', animationFillMode: 'both' }}>
-                    {model.badges.map((badge, idx) => (
-                      <span
-                        key={idx}
-                        className="px-5 py-2.5 text-sm font-medium bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-full border border-border/50 shadow-md hover:shadow-lg transition-all hover:scale-110 hover:border-primary/50"
-                      >
-                        {badge.label}
-                      </span>
-                    ))}
+                    {model.badges
+                      .filter(b => {
+                        const label = b.label.toLowerCase();
+                        return !['pick', 'bs', 'this', 'the', 'and', 'or'].includes(label) && 
+                               label.length > 2 && 
+                               (label.includes('license') || label.includes('mit') || label.includes('apache') || 
+                                label.length > 4 || /^[A-Z]/.test(b.label));
+                      })
+                      .slice(0, 6)
+                      .map((badge, idx) => (
+                        <span
+                          key={idx}
+                          className="px-5 py-2.5 text-sm font-semibold bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full border-2 border-border/60 shadow-lg hover:shadow-xl transition-all hover:scale-110 hover:border-primary/60 hover:bg-primary/5"
+                        >
+                          {badge.label}
+                        </span>
+                      ))}
                   </div>
                 )}
 
@@ -319,12 +335,26 @@ export function LandingPage({ model }: LandingPageProps) {
               <section 
                 key={section.id} 
                 id={section.id} 
-                className={`relative py-24 md:py-32 ${idx % 2 === 0 ? 'bg-background' : 'bg-gradient-to-b from-muted/10 via-background to-background'}`}
+                className={`relative py-24 md:py-32 overflow-hidden ${idx % 2 === 0 ? 'bg-background' : 'bg-gradient-to-b from-muted/10 via-background to-background'}`}
               >
+                {/* Decorative background for installation */}
                 {isInstallation && (
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent"></div>
+                  <>
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent"></div>
+                    <div className="absolute top-20 right-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-20 left-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+                  </>
                 )}
-                <div className="container mx-auto px-4">
+                
+                {/* Decorative background for how it works */}
+                {isHowItWorks && (
+                  <>
+                    <div className="absolute top-1/4 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-1/4 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+                  </>
+                )}
+                
+                <div className="container mx-auto px-4 relative z-10">
                   <div className={`max-w-5xl mx-auto`}>
                     <div className="text-center mb-12">
                       <h2 className="text-4xl md:text-6xl font-extrabold mb-6">
@@ -334,20 +364,38 @@ export function LandingPage({ model }: LandingPageProps) {
                       </h2>
                       <div className="w-32 h-1.5 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto rounded-full"></div>
                       {isInstallation && (
-                        <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto">
+                        <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto font-medium">
                           Get up and running in minutes
                         </p>
                       )}
+                      {isHowItWorks && (
+                        <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto font-medium">
+                          Simple steps to get started
+                        </p>
+                      )}
                     </div>
-                    <div className={`prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-p:text-muted-foreground prose-code:bg-gradient-to-r prose-code:from-primary/10 prose-code:to-primary/5 prose-code:px-2.5 prose-code:py-1.5 prose-code:rounded-lg prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-primary/20 prose-code:shadow-sm prose-pre:bg-gradient-to-br prose-pre:from-gray-900 prose-pre:to-gray-800 prose-pre:p-6 prose-pre:rounded-2xl prose-pre:border prose-pre:border-border/50 prose-pre:shadow-2xl prose-ul:list-disc prose-ol:list-decimal prose-li:my-4 prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground prose-strong:font-bold prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:shadow-lg prose-img:rounded-xl prose-img:shadow-lg ${isHowItWorks ? 'prose-ul:list-none prose-ul:space-y-4' : ''}`}>
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: renderedSections[section.id] || section.content,
-                        }}
-                      />
+                    <div className={`${isInstallation ? 'bg-gradient-to-br from-muted/30 via-muted/20 to-muted/10 rounded-3xl p-8 md:p-12 border border-border/50 shadow-xl' : isHowItWorks ? 'bg-gradient-to-br from-primary/5 via-background to-background rounded-3xl p-8 md:p-12 border border-border/30' : ''}`}>
+                      {isHowItWorks ? (
+                        <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-p:text-muted-foreground prose-code:bg-gradient-to-r prose-code:from-primary/10 prose-code:to-primary/5 prose-code:px-2.5 prose-code:py-1.5 prose-code:rounded-lg prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-primary/20 prose-code:shadow-sm prose-pre:bg-gradient-to-br prose-pre:from-gray-900 prose-pre:to-gray-800 prose-pre:p-6 prose-pre:rounded-2xl prose-pre:border prose-pre:border-border/50 prose-pre:shadow-2xl prose-pre:overflow-x-auto prose-ul:list-none prose-ol:list-none prose-li:my-6 prose-li:relative prose-li:pl-16 prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground prose-strong:font-bold prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:shadow-lg prose-img:rounded-xl prose-img:shadow-lg">
+                          <div
+                            className="how-it-works-steps"
+                            dangerouslySetInnerHTML={{
+                              __html: renderedSections[section.id] || section.content,
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className={`prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-p:text-muted-foreground prose-code:bg-gradient-to-r prose-code:from-primary/10 prose-code:to-primary/5 prose-code:px-2.5 prose-code:py-1.5 prose-code:rounded-lg prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-primary/20 prose-code:shadow-sm prose-pre:bg-gradient-to-br prose-pre:from-gray-900 prose-pre:to-gray-800 prose-pre:p-6 prose-pre:rounded-2xl prose-pre:border prose-pre:border-border/50 prose-pre:shadow-2xl prose-pre:overflow-x-auto prose-ul:list-disc prose-ol:list-decimal prose-li:my-4 prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground prose-strong:font-bold prose-blockquote:border-l-4 prose-blockquote:border-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:shadow-lg prose-img:rounded-xl prose-img:shadow-lg ${isInstallation ? 'prose-pre:bg-gradient-to-br prose-pre:from-gray-950 prose-pre:to-gray-900 prose-pre:border-primary/30' : ''}`}>
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: renderedSections[section.id] || section.content,
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                     {isInstallation && (
-                      <div className="mt-12 text-center">
+                      <div className="mt-12 text-center space-y-4">
                         <Button 
                           size="lg" 
                           asChild
@@ -358,6 +406,21 @@ export function LandingPage({ model }: LandingPageProps) {
                             <span className="text-xl">→</span>
                           </a>
                         </Button>
+                        {model.secondaryLinks.length > 0 && (
+                          <div className="flex flex-wrap justify-center gap-3 mt-6">
+                            {model.secondaryLinks.slice(0, 2).map((link, linkIdx) => (
+                              <a
+                                key={linkIdx}
+                                href={link.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium"
+                              >
+                                {link.label} →
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -370,21 +433,40 @@ export function LandingPage({ model }: LandingPageProps) {
 
       {/* Secondary Sections - Tech Stack, Project Structure, etc. */}
       {secondarySections.length > 0 && (
-        <section className="relative py-20 bg-gradient-to-b from-background via-muted/5 to-background">
-          <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                {secondarySections.map((section) => (
-                  <div key={section.id} className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-2xl p-8 border border-border/50 shadow-xl hover:shadow-2xl transition-all">
-                    <h3 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                      {section.title}
-                    </h3>
-                    <div className="prose prose-base dark:prose-invert max-w-none prose-headings:font-bold prose-p:text-muted-foreground prose-code:bg-gradient-to-r prose-code:from-primary/10 prose-code:to-primary/5 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-pre:bg-gradient-to-br prose-pre:from-gray-900 prose-pre:to-gray-800 prose-pre:p-4 prose-pre:rounded-xl prose-pre:border prose-pre:border-border/50 prose-pre:shadow-lg prose-ul:list-disc prose-ol:list-decimal prose-li:my-2 prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline">
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: renderedSections[section.id] || section.content,
-                        }}
-                      />
+        <section className="relative py-24 bg-gradient-to-b from-background via-muted/5 to-background overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-primary/3 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/2 right-1/4 w-96 h-96 bg-primary/3 rounded-full blur-3xl"></div>
+          
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-7xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl md:text-5xl font-extrabold mb-4">
+                  <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    Project Details
+                  </span>
+                </h2>
+                <div className="w-24 h-1.5 bg-gradient-to-r from-transparent via-primary to-transparent mx-auto rounded-full"></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {secondarySections.map((section, idx) => (
+                  <div 
+                    key={section.id} 
+                    className="group relative animate-fade-in-up"
+                    style={{ animationDelay: `${idx * 0.1}s`, animationFillMode: 'both' }}
+                  >
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/10 to-primary/5 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl p-8 border-2 border-border/50 shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] h-full">
+                      <h3 className="text-2xl md:text-3xl font-extrabold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        {section.title}
+                      </h3>
+                      <div className="prose prose-base dark:prose-invert max-w-none prose-headings:font-bold prose-p:text-muted-foreground prose-code:bg-gradient-to-r prose-code:from-primary/10 prose-code:to-primary/5 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-pre:bg-gradient-to-br prose-pre:from-gray-900 prose-pre:to-gray-800 prose-pre:p-4 prose-pre:rounded-xl prose-pre:border prose-pre:border-border/50 prose-pre:shadow-lg prose-ul:list-disc prose-ol:list-decimal prose-li:my-2 prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline">
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: renderedSections[section.id] || section.content,
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -396,16 +478,23 @@ export function LandingPage({ model }: LandingPageProps) {
 
       {/* Tertiary Sections - Contributing, License, etc. */}
       {tertiarySections.length > 0 && (
-        <section className="relative py-16 bg-gradient-to-b from-background to-muted/10">
+        <section className="relative py-20 bg-gradient-to-b from-background via-muted/5 to-background">
           <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="space-y-12">
-                {tertiarySections.map((section) => (
-                  <div key={section.id} id={section.id} className="border-b border-border/30 last:border-0 pb-12 last:pb-0">
-                    <h3 className="text-2xl md:text-3xl font-bold mb-6 text-foreground">
-                      {section.title}
-                    </h3>
-                    <div className="prose prose-base dark:prose-invert max-w-none prose-p:text-muted-foreground prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline">
+            <div className="max-w-5xl mx-auto">
+              <div className="space-y-16">
+                {tertiarySections.map((section, idx) => (
+                  <div 
+                    key={section.id} 
+                    id={section.id} 
+                    className={`relative ${idx < tertiarySections.length - 1 ? 'pb-16 border-b border-border/20' : ''}`}
+                  >
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-1 h-12 bg-gradient-to-b from-primary to-primary/50 rounded-full"></div>
+                      <h3 className="text-3xl md:text-4xl font-extrabold text-foreground">
+                        {section.title}
+                      </h3>
+                    </div>
+                    <div className="prose prose-lg dark:prose-invert max-w-none prose-p:text-muted-foreground prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline prose-strong:text-foreground prose-strong:font-bold prose-code:bg-muted prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:p-4 prose-pre:rounded-xl">
                       <div
                         dangerouslySetInnerHTML={{
                           __html: renderedSections[section.id] || section.content,

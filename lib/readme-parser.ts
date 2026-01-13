@@ -443,48 +443,64 @@ function extractSections(ast: Root): Array<{ id: string; title: string; content:
 
 function extractBadges(ast: Root, links: Array<{ label: string; href: string }>): Array<{ label: string; href?: string }> {
   const badges: Array<{ label: string; href?: string }> = [];
+  const seen = new Set<string>();
 
-  // Look for tech stack line (e.g., "Next.js TypeScript Tailwind CSS License")
-  visit(ast, 'paragraph', (node: Paragraph) => {
-    const text = extractTextFromNode(node);
-    // Check if this looks like a tech stack line (multiple capitalized words)
-    const techWords = text.match(/\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\b/g);
-    if (techWords && techWords.length >= 3) {
-      // This might be a tech stack line - extract individual techs
-      const words = text.split(/\s+/).filter(w => w.length > 2 && /^[A-Z]/.test(w));
-      if (words.length >= 3 && words.length <= 8) {
-        for (const word of words.slice(0, 6)) {
-          if (!badges.some(b => b.label === word)) {
-            badges.push({ label: word });
-          }
-        }
-        return; // Found tech stack, don't continue
-      }
-    }
-  });
-
-  // Look for common badge patterns (images with alt text)
+  // Look for common badge patterns (images with alt text) - these are most reliable
   visit(ast, 'image', (node) => {
     if (node.alt) {
       const alt = node.alt.toLowerCase();
-      if (alt.includes('license') || alt.includes('version') || alt.includes('build') || alt.includes('status')) {
-        badges.push({
-          label: node.alt,
-          href: node.url || undefined,
-        });
+      if (alt.includes('license') || alt.includes('version') || alt.includes('build') || alt.includes('status') || alt.includes('badge')) {
+        const label = node.alt;
+        if (!seen.has(label.toLowerCase())) {
+          badges.push({
+            label,
+            href: node.url || undefined,
+          });
+          seen.add(label.toLowerCase());
+        }
       }
     }
   });
 
-  // Also check for links that look like badges
-  for (const link of links.slice(0, 3)) {
+  // Check for links that look like badges (shields.io, etc.)
+  for (const link of links) {
     const label = link.label.toLowerCase();
-    if (label.includes('license') || label.includes('version') || label.includes('npm') || label.includes('badge')) {
+    const href = link.href.toLowerCase();
+    if ((label.includes('license') || label.includes('version') || label.includes('npm') || label.includes('badge') || 
+         href.includes('shields.io') || href.includes('badge')) && !seen.has(label)) {
       badges.push(link);
+      seen.add(label);
     }
   }
 
-  return badges.slice(0, 6);
+  // Only extract tech stack as badges if we have very few badges and it's clearly a tech stack line
+  if (badges.length < 2) {
+    visit(ast, 'paragraph', (node: Paragraph) => {
+      const text = extractTextFromNode(node);
+      // Only if it's a short line with tech names (not a full sentence)
+      if (text.length < 100 && text.split(/\s+/).length <= 8) {
+        const techWords = text.match(/\b([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)\b/g);
+        if (techWords && techWords.length >= 3 && techWords.length <= 6) {
+          // This looks like a tech stack line
+          const words = text.split(/\s+/).filter(w => w.length > 2 && /^[A-Z][a-z]/.test(w) && !w.includes('.'));
+          // Only add if they look like tech names (common patterns)
+          const techKeywords = ['next', 'react', 'vue', 'angular', 'typescript', 'javascript', 'python', 'node', 'tailwind', 'css', 'html', 'license', 'mit', 'apache'];
+          const validTechs = words.filter(w => techKeywords.some(k => w.toLowerCase().includes(k)) || w.length > 3);
+          
+          if (validTechs.length >= 2 && validTechs.length <= 5) {
+            for (const word of validTechs.slice(0, 4)) {
+              if (!seen.has(word.toLowerCase())) {
+                badges.push({ label: word });
+                seen.add(word.toLowerCase());
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  return badges.slice(0, 5);
 }
 
 function extractHeroImage(ast: Root): { url: string; alt: string } | undefined {
